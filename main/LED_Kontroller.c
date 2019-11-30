@@ -64,6 +64,7 @@ static struct led_color_t led_strip_buf_2[LED_STRIP_LENGTH];
 int8_t Takt = 0; 
 int8_t Beat = 0;
 int8_t Color_change = 0;
+int16_t LED_counter = 0;
 
 
 
@@ -71,6 +72,7 @@ int8_t Color_change = 0;
 
 void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color);
 void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color);
+void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color);
 
 
 void app_main()
@@ -460,10 +462,11 @@ void xLED (void *pvParameters)
 			{
 				case 0: walkinglight(&led_strip,&led_color);break;
 				case 1: lightchanger(&led_strip,&led_color);break;
-			
+				case 2: colorwipe(&led_strip,&led_color);break;
+		
 				default:break;
 			}
-			vTaskDelay(50/ portTICK_PERIOD_MS);
+			vTaskDelay(1/ portTICK_PERIOD_MS);
 		
 						
 
@@ -522,6 +525,7 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 	
 	led_strip_set_pixel_color(led_strip, 0, led_color);
 	led_strip_show(led_strip);
+	vTaskDelay(10/ portTICK_PERIOD_MS);
 	
 	
 }
@@ -537,13 +541,46 @@ void Rainbow(struct led_strip_t *led_strip, struct led_color_t *led_color)
 
 void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color)
 {
-	for( int g = 0; g < 765; g++)
+	LED_counter++;
+
+	if (Takt == true)
 	{
-	
+		if(LED_counter > 550)
+		{
+			LED_counter -= 550;
+		}
+		else
+		{
+			LED_counter += 50;
+		}
 	}
-	led_strip_set_pixel_color(led_strip, 0, led_color);
+	Takt = false;
+	if(LED_counter > 600)
+	{
+		LED_counter = 0;
+	}
+		
+	if(LED_counter<200)
+	{
+		led_color->red = LED_counter;
+		led_color->blue = 200-LED_counter;
+	}
+	if((LED_counter>200) && (LED_counter< 400))
+	{
+		led_color->green = LED_counter-200;
+		led_color->red = 400-LED_counter;
+	}
+	if((LED_counter>400) && (LED_counter< 600))
+	{
+		led_color->blue = LED_counter-400;
+		led_color->green = 600-LED_counter;
+	}
+	for(int g = 0; g < LED_STRIP_LENGTH;g++)
+	{
+		led_strip_set_pixel_color(led_strip, g, led_color);
+	}
 	led_strip_show(led_strip);
-	
+	vTaskDelay(10/ portTICK_PERIOD_MS);
 	
 }
 
@@ -601,6 +638,9 @@ void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color)
 			}
 			
 			Takt = false;
+			vTaskDelay(10/ portTICK_PERIOD_MS);
 			
 }
+
+
 
