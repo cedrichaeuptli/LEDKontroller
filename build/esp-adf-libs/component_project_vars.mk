@@ -1,0 +1,8 @@
+# Automatically generated build file. Do not edit.
+COMPONENT_INCLUDES += /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_audio/include /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_codec/include/codec /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_codec/include/processing /home/cedric/esp/esp-adf/components/esp-adf-libs/recorder_engine/include /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_sr/include /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_ssdp/include /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_dlna/include /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_upnp/include /home/cedric/esp/esp-adf/components/esp-adf-libs/esp_sip/include
+COMPONENT_LDFLAGS += -L$(BUILD_DIR_BASE)/esp-adf-libs -lesp-adf-libs -L/home/cedric/esp/esp-adf/components/esp-adf-libs/esp_audio/lib -L/home/cedric/esp/esp-adf/components/esp-adf-libs/esp_codec/lib -L/home/cedric/esp/esp-adf/components/esp-adf-libs/recorder_engine/lib -L/home/cedric/esp/esp-adf/components/esp-adf-libs/esp_sr/lib -L/home/cedric/esp/esp-adf/components/esp-adf-libs/esp_ssdp/lib -L/home/cedric/esp/esp-adf/components/esp-adf-libs/esp_upnp/lib -L/home/cedric/esp/esp-adf/components/esp-adf-libs/esp_dlna/lib -L/home/cedric/esp/esp-adf/components/esp-adf-libs/esp_sip/lib -lesp_processing -lesp_audio -lesp-amr -lesp-amrwbenc -lesp-aac -lesp-ogg-container -lesp-opus -lesp-tremor -lesp-flac -lesp_ssdp -lesp_upnp -lesp_dlna -lesp_sip -lvad -lesp_wakenet -lnn_model_hilexin_wn5 -lrecorder_engine 
+COMPONENT_LINKER_DEPS += 
+COMPONENT_SUBMODULES += 
+COMPONENT_LIBRARIES += esp-adf-libs
+COMPONENT_LDFRAGMENTS += 
+component-esp-adf-libs-build: 
