@@ -61,10 +61,10 @@ static struct led_color_t led_strip_buf_1[LED_STRIP_LENGTH];
 static struct led_color_t led_strip_buf_2[LED_STRIP_LENGTH];
 
 
-int8_t Takt = 0; 
-int8_t Beat = 0;
-int8_t Color_change = 0;
-int16_t LED_counter = 0;
+int8_t ucTakt = 0; 
+int8_t ucBeat = 0;
+int8_t ucColor_change = 0;
+int16_t usLED_counter = 0;
 
 
 
@@ -105,11 +105,15 @@ void app_main()
    
 
 }
-
+/********************************************/
+// xBeat_detection ist zuständig für die Takterkennung. Dieser wird mittels 2 methoden den Takt erkennen. 
+// Einerseits mittels Leistungserhöhung, um den momentaner Takt festellen zu können und andererseits über längerezeit mittels eines FFT um den genauen Takt zu erhalten  
+//
+/********************************************/
 void xBeat_detection (void *pvParameters)
 {
-    audio_pipeline_handle_t pipeline;
-    audio_element_handle_t i2s_stream_reader, filter, raw_read;
+    audio_pipeline_handle_t xPipeline;
+    audio_element_handle_t xI2s_stream_reader, xFilter, xRaw_read;
    // esp_timer_handle_t Timer;
 
     gpio_pad_select_gpio(LED_GPIO);
@@ -124,8 +128,8 @@ void xBeat_detection (void *pvParameters)
 
     ESP_LOGI(TAG, "Task 1 [ 2 ] Create audio pipeline for recording");
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
-    pipeline = audio_pipeline_init(&pipeline_cfg);
-    mem_assert(pipeline);
+    xPipeline = audio_pipeline_init(&pipeline_cfg);
+    mem_assert(xPipeline);
 
     ESP_LOGI(TAG, "Task 1 [2.1] Create i2s stream to read audio data from codec chip");
     i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT();
@@ -134,7 +138,7 @@ void xBeat_detection (void *pvParameters)
 #if defined CONFIG_ESP_LYRAT_MINI_V1_1_BOARD
     i2s_cfg.i2s_port = 1;
 #endif
-    i2s_stream_reader = i2s_stream_init(&i2s_cfg);
+    xI2s_stream_reader = i2s_stream_init(&i2s_cfg);
 
     ESP_LOGI(TAG, "Task 1 [2.2] Create filter to resample audio data");
     rsp_filter_cfg_t rsp_cfg = DEFAULT_RESAMPLE_FILTER_CONFIG();
@@ -143,25 +147,25 @@ void xBeat_detection (void *pvParameters)
     rsp_cfg.dest_rate = AUDIO_SAMPLE_RATE_HZ;
     rsp_cfg.dest_ch = 1;
     rsp_cfg.type = AUDIO_CODEC_TYPE_ENCODER;
-    filter = rsp_filter_init(&rsp_cfg);
+    xFilter = rsp_filter_init(&rsp_cfg);
 
     ESP_LOGI(TAG, "Task 1 [2.3] Create raw to receive data");
     raw_stream_cfg_t raw_cfg = {
         .out_rb_size = 1 * 1024,
         .type = AUDIO_STREAM_READER,
     };
-    raw_read = raw_stream_init(&raw_cfg);
+    xRaw_read = raw_stream_init(&raw_cfg);
 
     ESP_LOGI(TAG, "Task 1 [ 3 ] Register all elements to audio pipeline");
-    audio_pipeline_register(pipeline, i2s_stream_reader, "i2s");
-    audio_pipeline_register(pipeline, filter, "filter");
-    audio_pipeline_register(pipeline, raw_read, "raw");
+    audio_pipeline_register(xPipeline, xI2s_stream_reader, "i2s");
+    audio_pipeline_register(xPipeline, xFilter, "filter");
+    audio_pipeline_register(xPipeline, xRaw_read, "raw");
 
     ESP_LOGI(TAG, "Task 1 [ 4 ] Link elements together [codec_chip]-->i2s_stream-->filter-->raw-->[VAD]");
-    audio_pipeline_link(pipeline, (const char *[]) {"i2s", "filter", "raw"}, 3);
+    audio_pipeline_link(xPipeline, (const char *[]) {"i2s", "filter", "raw"}, 3);
 
     ESP_LOGI(TAG, "Task 1 [ 5 ] Start audio_pipeline");
-    audio_pipeline_run(pipeline);
+    audio_pipeline_run(xPipeline);
 
     ESP_LOGI(TAG, "Task 1 [ 6 ] Start Timer");
     /*const esp_timer_create_args_t oneshot_timer_args =
@@ -187,32 +191,32 @@ void xBeat_detection (void *pvParameters)
     }
 	
 	ESP_LOGI(TAG, "Task 1 [ 7 ] Initialize Variable");
-	float Variance_calc = 0;
-	float Variance = 0;
-	float BPM_time = 0;
-	float BPM_sensitivity = 1.3;
-	float time_beetween_beat = 0;
-	float time_beetween_color = 0;
-	float AudioData_FFTAverage_Frequenzband1[2048]={0};
-	float Biggestvalue = 0;
-	double AudioData_smallAverage_eachFrequenzband[FREQUENZYBANDS][AUDIO_BUFFER_SIZE]={0};
-	double SmallAverage_one_frequenzband = 0;
-	double OneSecAverage_one_frequenzband_calc=0;
-	double OneSecAverage_one_Frequenzband[FREQUENZYBANDS] = {0};
-	int16_t Audio_buffer_pos = 0;
-	int16_t samplefreq = 0;
-	int16_t FFTbufferpos = 0;
-	int16_t BPM = 0;
-	int16_t Position = 0;
-	int16_t Color_counter = 0;
-	int64_t lasttime_Color = 0;
-	int64_t lasttime = 0;
+	float fusVariance_calc = 0;
+	float fusVariance = 0;
+	float fusBPM_time = 0;
+	float fusBPM_sensitivity = 1.3;
+	float fusTime_beetween_beat = 0;
+	float fusTime_beetween_color = 0;
+	float fusAudioData_FFTAverage_Frequenzband1[2048]={0};
+	float fusBiggestvalue = 0;
+	double fulAudioData_smallAverage_eachFrequenzband[FREQUENZYBANDS][AUDIO_BUFFER_SIZE]={0};
+	double fulSmallAverage_one_frequenzband = 0;
+	double fulOneSecAverage_one_frequenzband_calc=0;
+	double fulOneSecAverage_one_Frequenzband[FREQUENZYBANDS] = {0};
+	int16_t usAudio_buffer_pos = 0;
+	int16_t usSamplefreq = 0;
+	int16_t usFFTbufferpos = 0;
+	int16_t usBPM = 0;
+	int16_t usPosition = 0;
+	int16_t usColor_counter = 0;
+	int64_t ullLasttime_Color = 0;
+	int64_t ullLasttime = 0;
 	
     while (1) {
 
-	for (int Ringbufferpos = 0; Ringbufferpos < AUDIO_BUFFER_SIZE; Ringbufferpos++)
+	for (int usRingbufferpos = 0; usRingbufferpos < AUDIO_BUFFER_SIZE; usRingbufferpos++)
 	{
-		raw_stream_read(raw_read, (char *)raw_audio_data, AUDIO_BUFFER_LENGTH * sizeof(short));
+		raw_stream_read(xRaw_read, (char *)raw_audio_data, AUDIO_BUFFER_LENGTH * sizeof(short));
 		for (int m = 0 ; m < AUDIO_BUFFER_LENGTH ; m++)
 		{
 			fft_analysis->input[m] =raw_audio_data[m];
@@ -224,78 +228,78 @@ void xBeat_detection (void *pvParameters)
 		{
 			for(int j = 0; j < (AUDIO_BUFFER_LENGTH/2)/FREQUENZYBANDS; j++)
 			{
-				SmallAverage_one_frequenzband += (sqrt(fft_analysis->output[Audio_buffer_pos]*fft_analysis->output[Audio_buffer_pos]+fft_analysis->output[Audio_buffer_pos+1] * fft_analysis->output[Audio_buffer_pos+1]))/(AUDIO_BUFFER_LENGTH);
-				Audio_buffer_pos += 2;
+				fulSmallAverage_one_frequenzband += (sqrt(fft_analysis->output[usAudio_buffer_pos]*fft_analysis->output[usAudio_buffer_pos]+fft_analysis->output[usAudio_buffer_pos+1] * fft_analysis->output[usAudio_buffer_pos+1]))/(AUDIO_BUFFER_LENGTH);
+				usAudio_buffer_pos += 2;
 			}
 			 
-			AudioData_smallAverage_eachFrequenzband[i][Ringbufferpos] = SmallAverage_one_frequenzband/((AUDIO_BUFFER_LENGTH/2)/FREQUENZYBANDS);
-			SmallAverage_one_frequenzband = 0;
+			fulAudioData_smallAverage_eachFrequenzband[i][usRingbufferpos] = fulSmallAverage_one_frequenzband/((AUDIO_BUFFER_LENGTH/2)/FREQUENZYBANDS);
+			fulSmallAverage_one_frequenzband = 0;
 		}
-		Audio_buffer_pos = 0;
+		usAudio_buffer_pos = 0;
 
-		samplefreq++;
+		usSamplefreq++;
 
 		for (int y = 0; y <FREQUENZYBANDS ; y++)	
 		{
 			for (int z = 0; z < 43 ; z++)
 			{
-				OneSecAverage_one_frequenzband_calc += AudioData_smallAverage_eachFrequenzband[y][z];			
+				fulOneSecAverage_one_frequenzband_calc += fulAudioData_smallAverage_eachFrequenzband[y][z];			
 			}
-			OneSecAverage_one_Frequenzband[y] = OneSecAverage_one_frequenzband_calc/43;
-			OneSecAverage_one_frequenzband_calc = 0;
+			fulOneSecAverage_one_Frequenzband[y] = fulOneSecAverage_one_frequenzband_calc/43;
+			fulOneSecAverage_one_frequenzband_calc = 0;
 			
 		}
 		for (int q = 0; q < 43 ; q++)
 		{
-			Variance_calc = (AudioData_smallAverage_eachFrequenzband[0][q]-OneSecAverage_one_Frequenzband[0])*(AudioData_smallAverage_eachFrequenzband[0][q]-OneSecAverage_one_Frequenzband[0]);
+			fusVariance_calc = (fulAudioData_smallAverage_eachFrequenzband[0][q]-fulOneSecAverage_one_Frequenzband[0])*(fulAudioData_smallAverage_eachFrequenzband[0][q]-fulOneSecAverage_one_Frequenzband[0]);
 		}
-		Variance = Variance_calc/43;
-		BPM_sensitivity = (-0.0025714*Variance)+1.5142857;
-		if (BPM_sensitivity < 1)
+		fusVariance = fusVariance_calc/43;
+		fusBPM_sensitivity = (-0.0025714*fusVariance)+1.5142857;
+		if (fusBPM_sensitivity < 1)
 		{
-			BPM_sensitivity = 1;
+			fusBPM_sensitivity = 1;
 		}
-		if (FFTbufferpos > 4096)
+		if (usFFTbufferpos > 4096)
 		{
-			FFTbufferpos = 0;
+			usFFTbufferpos = 0;
 		}
 		
-		fft_frequenzband1->input[FFTbufferpos] = AudioData_smallAverage_eachFrequenzband[0][Ringbufferpos];
-		FFTbufferpos++;
+		fft_frequenzband1->input[usFFTbufferpos] = fulAudioData_smallAverage_eachFrequenzband[0][usRingbufferpos];
+		usFFTbufferpos++;
 
-		if (FFTbufferpos%100 == 0.000)
+		if (usFFTbufferpos%100 == 0.000)
 		{
 			fft_execute(fft_frequenzband1);
 			for (int k = 0 ; k < 2048 ; k++)
 			{
-				AudioData_FFTAverage_Frequenzband1[k] = sqrt(fft_frequenzband1->output[Position]*fft_frequenzband1->output[Position]+fft_frequenzband1->output[Position+1]*fft_frequenzband1->output[Position+1])/4096;
-				Position += 2;
-				if ((Biggestvalue < AudioData_FFTAverage_Frequenzband1[k])&&(k>80))
+				fusAudioData_FFTAverage_Frequenzband1[k] = sqrt(fft_frequenzband1->output[usPosition]*fft_frequenzband1->output[usPosition]+fft_frequenzband1->output[usPosition+1]*fft_frequenzband1->output[usPosition+1])/4096;
+				usPosition += 2;
+				if ((fusBiggestvalue < fusAudioData_FFTAverage_Frequenzband1[k])&&(k>80))
 				{
-					Biggestvalue = AudioData_FFTAverage_Frequenzband1[k];
-					BPM = k*0.63;
+					fusBiggestvalue = fusAudioData_FFTAverage_Frequenzband1[k];
+					usBPM = k*0.63;
 				}
 			}
-			Biggestvalue = 0;
-			Position = 0;
+			fusBiggestvalue = 0;
+			usPosition = 0;
 		
 		}
-		if(BPM > 200)
+		if(usBPM > 200)
 		{
-			BPM = BPM/2;
+			usBPM = usBPM/2;
 		}
 
-		time_beetween_color = (esp_timer_get_time() - lasttime_Color)/1000000.0;
-		if ((time_beetween_color > 3) && ( Color_counter > 50))
+		fusTime_beetween_color = (esp_timer_get_time() - ullLasttime_Color)/1000000.0;
+		if ((fusTime_beetween_color > 3) && ( usColor_counter > 50))
 		{
-			Color_counter = 0;
-			Color_change++;
-			if (Color_change > 2)
+			usColor_counter = 0;
+			ucColor_change++;
+			if (ucColor_change > 2)
 			{
-				Color_change = 0;
+				ucColor_change = 0;
 			}
 		}
-		if (time_beetween_color > 5)
+		if (fusTime_beetween_color > 5)
 		{	
 			for(int u = 0; u < 4096;u++)
 			{
@@ -304,25 +308,25 @@ void xBeat_detection (void *pvParameters)
 		}
 		
 		
-		if ((((OneSecAverage_one_Frequenzband[0] * 1.3)+10) < AudioData_smallAverage_eachFrequenzband[0][Ringbufferpos])) 
+		if ((((fulOneSecAverage_one_Frequenzband[0] * 1.3)+10) < fulAudioData_smallAverage_eachFrequenzband[0][usRingbufferpos])) 
 		{
-			lasttime_Color = esp_timer_get_time();
+			ullLasttime_Color = esp_timer_get_time();
 			
-			if (BPM > 1)
+			if (usBPM > 1)
 			{
-				BPM_time = 60.0/BPM;
+				fusBPM_time = 60.0/usBPM;
 				
 			}
-			time_beetween_beat = (esp_timer_get_time() - lasttime)/1000000.0;
-			if((BPM_time-0.1) < time_beetween_beat)
+			fusTime_beetween_beat = (esp_timer_get_time() - ullLasttime)/1000000.0;
+			if((fusBPM_time-0.1) < fusTime_beetween_beat)
 			{
-				Takt = true;
-				Color_counter++;
-				lasttime = esp_timer_get_time();
+				ucTakt = true;
+				usColor_counter++;
+				ullLasttime = esp_timer_get_time();
 			}
-			Beat = true;
+			ucBeat = true;
 			gpio_set_level(LED_GPIO, 1);
-            ESP_LOGI(TAG, "Beat detected BPM_average: %d ",BPM);
+            ESP_LOGI(TAG, "Beat detected BPM_average: %d ",usBPM);
 			
 			/*if (gpio_get_level(MODE_BUTTON_GPIO) == 0)
 			{
@@ -339,7 +343,7 @@ void xBeat_detection (void *pvParameters)
 		else
 		{
 			gpio_set_level(LED_GPIO, 0);
-			Beat = false;
+			ucBeat = false;
 		}
 		
 	}
@@ -353,27 +357,30 @@ void xBeat_detection (void *pvParameters)
     abort_beat_detection:
 
     ESP_LOGI(TAG, "Task 1 [ 8 ] Stop audio_pipeline and release all resources");
-    audio_pipeline_terminate(pipeline);
+    audio_pipeline_terminate(xPipeline);
 
    // fft_destroy(fft_analysis);
     //fft_destroy(fft_frequenzband1);
 
     /* Terminate the pipeline before removing the listener */
-    audio_pipeline_remove_listener(pipeline);
+    audio_pipeline_remove_listener(xPipeline);
 
-    audio_pipeline_unregister(pipeline, i2s_stream_reader);
-    audio_pipeline_unregister(pipeline, filter);
-    audio_pipeline_unregister(pipeline, raw_read);
+    audio_pipeline_unregister(xPipeline, xI2s_stream_reader);
+    audio_pipeline_unregister(xPipeline, xFilter);
+    audio_pipeline_unregister(xPipeline, xRaw_read);
 
     /* Release all resources */
-    audio_pipeline_deinit(pipeline);
-    audio_element_deinit(i2s_stream_reader);
-    audio_element_deinit(filter);
-    audio_element_deinit(raw_read);
+    audio_pipeline_deinit(xPipeline);
+    audio_element_deinit(xI2s_stream_reader);
+    audio_element_deinit(xFilter);
+    audio_element_deinit(xRaw_read);
 
 
 }
-
+/********************************************/
+// xLED dient zur ansteuerung der LED und um die Muster, welche in den Funktionen sind abzuspielen
+// 
+/********************************************/
 
 void xLED (void *pvParameters)
 {
@@ -477,7 +484,10 @@ void xLED (void *pvParameters)
 
 
 }
-
+/********************************************/
+// Walkinglight wird bei jeder Leistungerhöhung das erste LED einschalten und dann weiterleiten
+// 
+/********************************************/
 void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 {
 	for (int g = LED_STRIP_LENGTH-1; g > 0;g--)
@@ -485,9 +495,9 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 		led_strip_get_pixel_color(led_strip, g-1, led_color);
 		led_strip_set_pixel_color(led_strip, g, led_color);
 	}
-	switch(Color_change)
+	switch(ucColor_change)
 	{
-		case 0: if (Beat == true)
+		case 0: if (ucBeat == true)
 			{
 				led_color->blue = 200;
 			}
@@ -498,7 +508,7 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 			led_color->green = 0;
 			led_color->red =0;
 			break;
-		case 1: if (Beat == true)
+		case 1: if (ucBeat == true)
 			{
 				led_color->red = 200;
 			}
@@ -509,7 +519,7 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 			led_color->green = 0;
 			led_color->blue =0;
 			break;
-		case 2: if (Beat == true)
+		case 2: if (ucBeat == true)
 			{
 				led_color->green = 200;
 			}
@@ -529,7 +539,10 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 	
 	
 }
-
+/********************************************/
+// Rainbow 
+//
+/********************************************/
 void Rainbow(struct led_strip_t *led_strip, struct led_color_t *led_color)
 {
 	
@@ -538,42 +551,45 @@ void Rainbow(struct led_strip_t *led_strip, struct led_color_t *led_color)
 	
 	
 }
-
+/********************************************/
+// colorwipe wird die LED in einem Farbduchlauf abspielen, sobald ein Takt erkannt wird wird die Farbe geändert
+//
+/********************************************/
 void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color)
 {
-	LED_counter++;
+	usLED_counter++;
 
-	if (Takt == true)
+	if (ucTakt == true)
 	{
-		if(LED_counter > 550)
+		if(usLED_counter > 550)
 		{
-			LED_counter -= 550;
+			usLED_counter -= 550;
 		}
 		else
 		{
-			LED_counter += 50;
+			usLED_counter += 50;
 		}
 	}
-	Takt = false;
-	if(LED_counter > 600)
+	ucTakt = false;
+	if(usLED_counter > 600)
 	{
-		LED_counter = 0;
+		usLED_counter = 0;
 	}
 		
-	if(LED_counter<200)
+	if(usLED_counter<200)
 	{
-		led_color->red = LED_counter;
-		led_color->blue = 200-LED_counter;
+		led_color->red = usLED_counter;
+		led_color->blue = 200-usLED_counter;
 	}
-	if((LED_counter>200) && (LED_counter< 400))
+	if((usLED_counter>200) && (usLED_counter< 400))
 	{
-		led_color->green = LED_counter-200;
-		led_color->red = 400-LED_counter;
+		led_color->green = usLED_counter-200;
+		led_color->red = 400-usLED_counter;
 	}
-	if((LED_counter>400) && (LED_counter< 600))
+	if((usLED_counter>400) && (usLED_counter< 600))
 	{
-		led_color->blue = LED_counter-400;
-		led_color->green = 600-LED_counter;
+		led_color->blue = usLED_counter-400;
+		led_color->green = 600-usLED_counter;
 	}
 	for(int g = 0; g < LED_STRIP_LENGTH;g++)
 	{
@@ -583,13 +599,16 @@ void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color)
 	vTaskDelay(10/ portTICK_PERIOD_MS);
 	
 }
-
+/********************************************/
+// lightchanger wird die LED in Segmente aufteile welche in verschiedenen Farben leuchten sobald ein Takt erkannt wird, änder sich die Farbe
+//
+/********************************************/
 void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color)
 {
 	
-			if (Takt == true)
+			if (ucTakt == true)
 			{
-				switch(Color_change)
+				switch(ucColor_change)
 				{
 					case 0: if (led_color->blue == 200)
 						{
@@ -637,7 +656,7 @@ void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color)
 				led_strip_show(led_strip);
 			}
 			
-			Takt = false;
+			ucTakt = false;
 			vTaskDelay(10/ portTICK_PERIOD_MS);
 			
 }
