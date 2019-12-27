@@ -3,7 +3,7 @@ periph_button.o: \
  /home/cedric/esp/esp-idf/components/soc/esp32/include/soc/soc.h \
  /home/cedric/esp/esp-idf/components/esp_common/include/esp_assert.h \
  /home/cedric/esp/esp-idf/components/newlib/platform_include/assert.h \
- /home/cedric/esp/Projekt/vad/build/include/sdkconfig.h \
+ /home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h \
  /home/cedric/esp/esp-idf/components/esp_common/include/esp_bit_defs.h \
  /home/cedric/esp/esp-idf/components/soc/esp32/include/soc/rtc_cntl_reg.h \
  /home/cedric/esp/esp-idf/components/soc/esp32/include/soc/soc.h \
@@ -104,7 +104,7 @@ periph_button.o: \
 
 /home/cedric/esp/esp-idf/components/newlib/platform_include/assert.h:
 
-/home/cedric/esp/Projekt/vad/build/include/sdkconfig.h:
+/home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h:
 
 /home/cedric/esp/esp-idf/components/esp_common/include/esp_bit_defs.h:
 

@@ -3,7 +3,7 @@ driver/es7243/es7243.o: \
  /home/cedric/esp/esp-adf/components/audio_hal/driver/es7243/es7243.h \
  /home/cedric/esp/esp-idf/components/esp_common/include/esp_err.h \
  /home/cedric/esp/esp-idf/components/newlib/platform_include/assert.h \
- /home/cedric/esp/Projekt/vad/build/include/sdkconfig.h \
+ /home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h \
  /home/cedric/esp/esp-adf/components/audio_hal/include/audio_hal.h \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOS.h \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOSConfig.h \
@@ -101,7 +101,7 @@ driver/es7243/es7243.o: \
 
 /home/cedric/esp/esp-idf/components/newlib/platform_include/assert.h:
 
-/home/cedric/esp/Projekt/vad/build/include/sdkconfig.h:
+/home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h:
 
 /home/cedric/esp/esp-adf/components/audio_hal/include/audio_hal.h:
 

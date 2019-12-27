@@ -1,7 +1,7 @@
 input_key_service.o: \
  /home/cedric/esp/esp-adf/components/input_key_service/input_key_service.c \
  /home/cedric/esp/esp-idf/components/log/include/esp_log.h \
- /home/cedric/esp/Projekt/vad/build/include/sdkconfig.h \
+ /home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h \
  /home/cedric/esp/esp-idf/components/esp_rom/include/esp32/rom/ets_sys.h \
  /home/cedric/esp/esp-idf/components/log/include/esp_log_internal.h \
  /home/cedric/esp/esp-adf/components/audio_sal/include/audio_error.h \
@@ -99,7 +99,7 @@ input_key_service.o: \
 
 /home/cedric/esp/esp-idf/components/log/include/esp_log.h:
 
-/home/cedric/esp/Projekt/vad/build/include/sdkconfig.h:
+/home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h:
 
 /home/cedric/esp/esp-idf/components/esp_rom/include/esp32/rom/ets_sys.h:
 

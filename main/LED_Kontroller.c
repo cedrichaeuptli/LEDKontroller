@@ -22,6 +22,7 @@
 #include "driver/gpio.h"
 #include "led_strip/led_strip.h"
 #include "fft.h"
+#include "headphone_detect.h"
 
 
 #define AUDIO_SAMPLE_RATE_HZ 44032
@@ -31,7 +32,7 @@
 #define KLINKEN_GPIO 12
 #define MODE_BUTTON_GPIO 39
 #define REC_BUTTON_GPIO 36
-#define LED_STRIP_LENGTH 300U
+#define LED_STRIP_LENGTH 1200U
 #define LED_STRIP_RMT_INTR_NUM 15
 #define LED_STRIP_1 13
 #define LED_STRIP_2 15
@@ -61,7 +62,7 @@ static struct led_color_t led_strip_buf_1[LED_STRIP_LENGTH];
 static struct led_color_t led_strip_buf_2[LED_STRIP_LENGTH];
 
 
-int8_t ucTakt = 0; 
+int8_t ucTakt = 0;
 int8_t ucBeat = 0;
 int8_t ucColor_change = 0;
 int16_t usLED_counter = 0;
@@ -70,9 +71,12 @@ int16_t usLED_counter = 0;
 
 
 
+
 void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color);
-void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color);
+void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color,int16_t);
 void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color);
+void white(struct led_strip_t *led_strip, struct led_color_t *led_color);
+
 
 
 void app_main()
@@ -85,7 +89,7 @@ void app_main()
 
 	BaseType_t task_created1 = xTaskCreate(xBeat_detection,
                                             "xBeat_detection",
-                                            ESP_TASK_MAIN_STACK+100000,
+                                            ESP_TASK_MAIN_STACK+10000,
                                             NULL,
                                             ESP_TASK_PRIO_MIN,
                                             &xBeat_detection_handle);
@@ -99,15 +103,15 @@ void app_main()
 
 
 
-(void)task_created2;  
+(void)task_created2;
 (void)task_created1;
-	
-   
+
+
 
 }
 /********************************************/
-// xBeat_detection ist zuständig für die Takterkennung. Dieser wird mittels 2 methoden den Takt erkennen. 
-// Einerseits mittels Leistungserhöhung, um den momentaner Takt festellen zu können und andererseits über längerezeit mittels eines FFT um den genauen Takt zu erhalten  
+// xBeat_detection ist zuständig für die Takterkennung. Dieser wird mittels 2 methoden den Takt erkennen.
+// Einerseits mittels Leistungserhöhung, um den momentaner Takt festellen zu können und andererseits über längerezeit mittels eines FFT um den genauen Takt zu erhalten
 //
 /********************************************/
 void xBeat_detection (void *pvParameters)
@@ -189,8 +193,9 @@ void xBeat_detection (void *pvParameters)
         ESP_LOGE(TAG, "Memory allocation failed!");
         goto abort_beat_detection;
     }
-	
+
 	ESP_LOGI(TAG, "Task 1 [ 7 ] Initialize Variable");
+
 	float fusVariance_calc = 0;
 	float fusVariance = 0;
 	float fusBPM_time = 0;
@@ -211,7 +216,8 @@ void xBeat_detection (void *pvParameters)
 	int16_t usColor_counter = 0;
 	int64_t ullLasttime_Color = 0;
 	int64_t ullLasttime = 0;
-	
+
+
     while (1) {
 
 	for (int usRingbufferpos = 0; usRingbufferpos < AUDIO_BUFFER_SIZE; usRingbufferpos++)
@@ -231,7 +237,7 @@ void xBeat_detection (void *pvParameters)
 				fulSmallAverage_one_frequenzband += (sqrt(fft_analysis->output[usAudio_buffer_pos]*fft_analysis->output[usAudio_buffer_pos]+fft_analysis->output[usAudio_buffer_pos+1] * fft_analysis->output[usAudio_buffer_pos+1]))/(AUDIO_BUFFER_LENGTH);
 				usAudio_buffer_pos += 2;
 			}
-			 
+
 			fulAudioData_smallAverage_eachFrequenzband[i][usRingbufferpos] = fulSmallAverage_one_frequenzband/((AUDIO_BUFFER_LENGTH/2)/FREQUENZYBANDS);
 			fulSmallAverage_one_frequenzband = 0;
 		}
@@ -239,15 +245,15 @@ void xBeat_detection (void *pvParameters)
 
 		usSamplefreq++;
 
-		for (int y = 0; y <FREQUENZYBANDS ; y++)	
+		for (int y = 0; y <FREQUENZYBANDS ; y++)
 		{
 			for (int z = 0; z < 43 ; z++)
 			{
-				fulOneSecAverage_one_frequenzband_calc += fulAudioData_smallAverage_eachFrequenzband[y][z];			
+				fulOneSecAverage_one_frequenzband_calc += fulAudioData_smallAverage_eachFrequenzband[y][z];
 			}
 			fulOneSecAverage_one_Frequenzband[y] = fulOneSecAverage_one_frequenzband_calc/43;
 			fulOneSecAverage_one_frequenzband_calc = 0;
-			
+
 		}
 		for (int q = 0; q < 43 ; q++)
 		{
@@ -263,7 +269,7 @@ void xBeat_detection (void *pvParameters)
 		{
 			usFFTbufferpos = 0;
 		}
-		
+
 		fft_frequenzband1->input[usFFTbufferpos] = fulAudioData_smallAverage_eachFrequenzband[0][usRingbufferpos];
 		usFFTbufferpos++;
 
@@ -276,13 +282,15 @@ void xBeat_detection (void *pvParameters)
 				usPosition += 2;
 				if ((fusBiggestvalue < fusAudioData_FFTAverage_Frequenzband1[k])&&(k>80))
 				{
+
 					fusBiggestvalue = fusAudioData_FFTAverage_Frequenzband1[k];
 					usBPM = k*0.63;
+
 				}
 			}
 			fusBiggestvalue = 0;
 			usPosition = 0;
-		
+
 		}
 		if(usBPM > 200)
 		{
@@ -300,22 +308,34 @@ void xBeat_detection (void *pvParameters)
 			}
 		}
 		if (fusTime_beetween_color > 5)
-		{	
+		{
+			if(clear == 0)
+			{
+				clear = 1;
+				ESP_LOGI(TAG, "Buffer is clear");
+			}
+
+
 			for(int u = 0; u < 4096;u++)
 			{
 				fft_frequenzband1->input[u] =  0;
 			}
 		}
-		
-		
-		if ((((fulOneSecAverage_one_Frequenzband[0] * 1.3)+10) < fulAudioData_smallAverage_eachFrequenzband[0][usRingbufferpos])) 
+		else
+		{
+			clear = 0;
+		}
+
+
+
+		if ((((fulOneSecAverage_one_Frequenzband[0] * 1.3)+10) < fulAudioData_smallAverage_eachFrequenzband[0][usRingbufferpos]))
 		{
 			ullLasttime_Color = esp_timer_get_time();
-			
+
 			if (usBPM > 1)
 			{
 				fusBPM_time = 60.0/usBPM;
-				
+
 			}
 			fusTime_beetween_beat = (esp_timer_get_time() - ullLasttime)/1000000.0;
 			if((fusBPM_time-0.1) < fusTime_beetween_beat)
@@ -327,7 +347,7 @@ void xBeat_detection (void *pvParameters)
 			ucBeat = true;
 			gpio_set_level(LED_GPIO, 1);
             ESP_LOGI(TAG, "Beat detected BPM_average: %d ",usBPM);
-			
+
 			/*if (gpio_get_level(MODE_BUTTON_GPIO) == 0)
 			{
 				for (int p = 0 ; p < 2048 ; p++)
@@ -335,17 +355,17 @@ void xBeat_detection (void *pvParameters)
 			    		printf("%f ",AudioData_FFTAverage_Frequenzband1[p]);
 				}
 				printf("\n \n ");
-			
+
 			}*/
-			
-		
+
+
        		}
 		else
 		{
 			gpio_set_level(LED_GPIO, 0);
 			ucBeat = false;
 		}
-		
+
 	}
 
 }
@@ -379,8 +399,9 @@ void xBeat_detection (void *pvParameters)
 }
 /********************************************/
 // xLED dient zur ansteuerung der LED und um die Muster, welche in den Funktionen sind abzuspielen
-// 
+//
 /********************************************/
+
 
 void xLED (void *pvParameters)
 {
@@ -389,10 +410,10 @@ void xLED (void *pvParameters)
 	gpio_set_direction(MOSFET_GPIO, GPIO_MODE_OUTPUT);
 	gpio_pulldown_en(MOSFET_GPIO);
 	gpio_set_level(MOSFET_GPIO,0);
-	
+
 	gpio_pad_select_gpio(REC_BUTTON_GPIO);
 	gpio_set_direction(REC_BUTTON_GPIO, GPIO_MODE_INPUT);
-	
+
 	gpio_pad_select_gpio(MODE_BUTTON_GPIO);
     gpio_set_direction(MODE_BUTTON_GPIO, GPIO_MODE_INPUT);
 
@@ -407,10 +428,16 @@ void xLED (void *pvParameters)
 		.led_strip_length = LED_STRIP_LENGTH
 	};
 	led_strip.access_semaphore = xSemaphoreCreateBinary();
+        led_strip.update_semaphore = xSemaphoreCreateBinary();
 	bool led_init_ok = led_strip_init(&led_strip);
 	assert(led_init_ok);
 
 	struct led_color_t led_color = {
+		.red = 0,
+		.green = 0,
+		.blue = 0,
+		};
+	struct led_color_t led_color_get = {
 		.red = 0,
 		.green = 0,
 		.blue = 0,
@@ -424,6 +451,7 @@ void xLED (void *pvParameters)
 	bool Flankenerkennung = true;
 	int8_t Flanke_ModeButton = 0;
 	int8_t Modus = 0;
+	int8_t LED_white = 0;
 
 	while(true)
 	{
@@ -438,7 +466,7 @@ void xLED (void *pvParameters)
 			{
 				Ausschalten = true;
 			}
-			
+
 		}
 		if (gpio_get_level(REC_BUTTON_GPIO) == 0)
 		{
@@ -447,10 +475,10 @@ void xLED (void *pvParameters)
 		if ((gpio_get_level(MODE_BUTTON_GPIO) == 0) && (Flanke_ModeButton == 1))
 		{
 			Modus++;
-			if (Modus > 3)
+			if (Modus > 4)
 			{
 				Modus = 0;
-			}	
+			}
 		}
 		Flanke_ModeButton = gpio_get_level(MODE_BUTTON_GPIO);
 
@@ -464,29 +492,48 @@ void xLED (void *pvParameters)
 		else
 		{
 			gpio_set_level(MOSFET_GPIO,1);
-			
+
+
 			switch(Modus)
 			{
-				case 0: walkinglight(&led_strip,&led_color);break;
-				case 1: lightchanger(&led_strip,&led_color);break;
+				case 0: LED_white = 0;walkinglight(&led_strip,&led_color);break;
+				case 1: lightchanger(&led_strip,&led_color,1);break;
 				case 2: colorwipe(&led_strip,&led_color);break;
-		
+				case 3:
+					if(LED_white < 2)
+					{
+						LED_white++;
+						white(&led_strip,&led_color);
+					}break;
+				case 4:
+					if(BPM < 100)
+					{
+						colorwipe(&led_strip,&led_color);
+					}
+					else if(BPM < 120)
+					{
+						lightchanger(&led_strip,&led_color,3);
+					}
+					else
+					{
+						lightchanger(&led_strip,&led_color,5);
+					}break;
 				default:break;
 			}
-			vTaskDelay(1/ portTICK_PERIOD_MS);
-		
-						
+			//vTaskDelay(5/ portTICK_PERIOD_MS);
+
+
 
 
 		}
-		
+
 	}
 
 
 }
 /********************************************/
 // Walkinglight wird bei jeder Leistungerhöhung das erste LED einschalten und dann weiterleiten
-// 
+//
 /********************************************/
 void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 {
@@ -503,7 +550,7 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 			}
 			else
 			{
-				led_color->blue = 0;			
+				led_color->blue = 0;
 			}
 			led_color->green = 0;
 			led_color->red =0;
@@ -514,7 +561,7 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 			}
 			else
 			{
-				led_color->red = 0;			
+				led_color->red = 0;
 			}
 			led_color->green = 0;
 			led_color->blue =0;
@@ -525,31 +572,31 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 			}
 			else
 			{
-				led_color->green = 0;			
+				led_color->green = 0;
 			}
 			led_color->red = 0;
 			led_color->blue =0;
 			break;
 		default:break;
 	}
-	
+
 	led_strip_set_pixel_color(led_strip, 0, led_color);
 	led_strip_show(led_strip);
-	vTaskDelay(10/ portTICK_PERIOD_MS);
-	
-	
+	vTaskDelay(20/ portTICK_PERIOD_MS);
+
+
 }
 /********************************************/
-// Rainbow 
+// Rainbow
 //
 /********************************************/
 void Rainbow(struct led_strip_t *led_strip, struct led_color_t *led_color)
 {
-	
+
 	led_strip_set_pixel_color(led_strip, 0, led_color);
 	led_strip_show(led_strip);
-	
-	
+
+
 }
 /********************************************/
 // colorwipe wird die LED in einem Farbduchlauf abspielen, sobald ein Takt erkannt wird wird die Farbe geändert
@@ -575,7 +622,7 @@ void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color)
 	{
 		usLED_counter = 0;
 	}
-		
+
 	if(usLED_counter<200)
 	{
 		led_color->red = usLED_counter;
@@ -596,70 +643,103 @@ void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color)
 		led_strip_set_pixel_color(led_strip, g, led_color);
 	}
 	led_strip_show(led_strip);
-	vTaskDelay(10/ portTICK_PERIOD_MS);
-	
+	vTaskDelay(20/ portTICK_PERIOD_MS);
+
 }
+
 /********************************************/
 // lightchanger wird die LED in Segmente aufteile welche in verschiedenen Farben leuchten sobald ein Takt erkannt wird, änder sich die Farbe
 //
 /********************************************/
-void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color)
+
+
+void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color,int16_t subdivision)
 {
-	
+
+			int16_t LED_subdivision = LED_STRIP_LENGTH/subdivision;
 			if (ucTakt == true)
 			{
-				switch(ucColor_change)
+				changing = 1;
+				Takt = false;
+				for(int index = 0; index < (LED_STRIP_LENGTH/LED_subdivision);index++)
 				{
-					case 0: if (led_color->blue == 200)
-						{
-							led_color->blue = 0;
-							led_color->green = 200;
-						}
-						else
-						{
-							led_color->blue = 200;
-							led_color->green = 0;
-						}
-						led_color->red =0;
-						break;
-					case 1: if (led_color->red == 200)
-						{
-							led_color->red = 0;
-							led_color->blue = 200;
-						}
-						else
-						{
-							led_color->red = 200;
-							led_color->blue = 0;
-						}
-						led_color->green =0;
-						break;
-					case 2: if (led_color->green == 200)
-						{
-							led_color->green = 0;
-							led_color->red = 200;
-						}
-						else
-						{
-							led_color->green = 200;
-							led_color->red = 0;
-						}
-						led_color->blue =0;
-						break;
-					default:break;
-				}
-				
-				for(int g = 0; g < LED_STRIP_LENGTH;g++)
-				{
-					led_strip_set_pixel_color(led_strip, g, led_color);
+					switch(Color_change)
+					{
+						case 0: if (led_color->blue == 200)
+							{
+								led_color->blue = 0;
+								led_color->green = 200;
+							}
+							else
+							{
+								led_color->blue = 200;
+								led_color->green = 0;
+							}
+							led_color->red =0;
+							break;
+						case 1: if (led_color->red == 200)
+							{
+								led_color->red = 0;
+								led_color->blue = 200;
+							}
+							else
+							{
+								led_color->red = 200;
+								led_color->blue = 0;
+							}
+							led_color->green =0;
+							break;
+						case 2: if (led_color->green == 200)
+							{
+								led_color->green = 0;
+								led_color->red = 200;
+							}
+							else
+							{
+								led_color->green = 200;
+								led_color->red = 0;
+							}
+							led_color->blue =0;
+							break;
+						default:break;
+					}
+					for(int indexsub = 0; indexsub < LED_subdivision;indexsub++)
+					{
+						led_strip_set_pixel_color(led_strip, indexsub+(index*LED_subdivision), led_color);
+					}
 				}
 				led_strip_show(led_strip);
+
 			}
-			
+			vTaskDelay(10/ portTICK_PERIOD_MS);
+
+
+
+
+}
+
+
+void white(struct led_strip_t *led_strip, struct led_color_t *led_color)
+{
+
+			led_color->blue = 255;
+			led_color->red = 255;
+			led_color->green = 255;
+
+				for(int f = 0; f < LED_STRIP_LENGTH;f++)
+				{
+					led_strip_set_pixel_color(led_strip, f, led_color);
+				}
+				led_strip_show(led_strip);
+
+
 			ucTakt = false;
 			vTaskDelay(10/ portTICK_PERIOD_MS);
-			
+
+
+
 }
+
 
 
 

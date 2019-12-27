@@ -2,7 +2,7 @@ driver/es8388/headphone_detect.o: \
  /home/cedric/esp/esp-adf/components/audio_hal/driver/es8388/headphone_detect.c \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOS.h \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOSConfig.h \
- /home/cedric/esp/Projekt/vad/build/include/sdkconfig.h \
+ /home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/xtensa_config.h \
  /home/cedric/esp/esp-idf/components/xtensa/include/xtensa/hal.h \
  /home/cedric/esp/esp-idf/components/xtensa/esp32/include/xtensa/config/core.h \
@@ -101,7 +101,7 @@ driver/es8388/headphone_detect.o: \
 
 /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOSConfig.h:
 
-/home/cedric/esp/Projekt/vad/build/include/sdkconfig.h:
+/home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h:
 
 /home/cedric/esp/esp-idf/components/freertos/include/freertos/xtensa_config.h:
 
