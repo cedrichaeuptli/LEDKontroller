@@ -111,7 +111,8 @@ LED_Kontroller.o: \
  /home/cedric/esp/esp-idf/components/soc/include/soc/rmt_periph.h \
  /home/cedric/esp/esp-idf/components/soc/esp32/include/soc/rmt_reg.h \
  /home/cedric/esp/esp-idf/components/soc/esp32/include/soc/rmt_struct.h \
- /home/cedric/esp/Projekt/LED_Kontroller/components/fft/include/fft.h
+ /home/cedric/esp/Projekt/LED_Kontroller/components/fft/include/fft.h \
+ /home/cedric/esp/esp-adf/components/audio_hal/driver/es8388/headphone_detect.h
 
 /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOS.h:
 
@@ -336,4 +337,6 @@ LED_Kontroller.o: \
 /home/cedric/esp/esp-idf/components/soc/esp32/include/soc/rmt_struct.h:
 
 /home/cedric/esp/Projekt/LED_Kontroller/components/fft/include/fft.h:
+
+/home/cedric/esp/esp-adf/components/audio_hal/driver/es8388/headphone_detect.h:
 /home/cedric/esp/Projekt/LED_Kontroller/main/./LED_Kontroller.c:

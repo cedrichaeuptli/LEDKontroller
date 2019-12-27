@@ -2,7 +2,7 @@ lib/sdcard/sdcard.o: \
  /home/cedric/esp/esp-adf/components/esp_peripherals/lib/sdcard/sdcard.c \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOS.h \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOSConfig.h \
- /home/cedric/esp/Projekt/vad/build/include/sdkconfig.h \
+ /home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/xtensa_config.h \
  /home/cedric/esp/esp-idf/components/xtensa/include/xtensa/hal.h \
  /home/cedric/esp/esp-idf/components/xtensa/esp32/include/xtensa/config/core.h \
@@ -111,7 +111,7 @@ lib/sdcard/sdcard.o: \
 
 /home/cedric/esp/esp-idf/components/freertos/include/freertos/FreeRTOSConfig.h:
 
-/home/cedric/esp/Projekt/vad/build/include/sdkconfig.h:
+/home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h:
 
 /home/cedric/esp/esp-idf/components/freertos/include/freertos/xtensa_config.h:
 

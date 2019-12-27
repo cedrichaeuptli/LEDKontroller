@@ -4,7 +4,7 @@ driver/es8311/es8311.o: \
  /home/cedric/esp/esp-idf/components/esp_common/include/esp_types.h \
  /home/cedric/esp/esp-idf/components/esp_common/include/esp_err.h \
  /home/cedric/esp/esp-idf/components/newlib/platform_include/assert.h \
- /home/cedric/esp/Projekt/vad/build/include/sdkconfig.h \
+ /home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h \
  /home/cedric/esp/esp-idf/components/esp32/include/esp_intr_alloc.h \
  /home/cedric/esp/esp-idf/components/freertos/include/freertos/xtensa_api.h \
  /home/cedric/esp/esp-idf/components/xtensa/include/xtensa/hal.h \
@@ -104,7 +104,7 @@ driver/es8311/es8311.o: \
 
 /home/cedric/esp/esp-idf/components/newlib/platform_include/assert.h:
 
-/home/cedric/esp/Projekt/vad/build/include/sdkconfig.h:
+/home/cedric/esp/Projekt/LED_Kontroller/build/include/sdkconfig.h:
 
 /home/cedric/esp/esp-idf/components/esp32/include/esp_intr_alloc.h:
 

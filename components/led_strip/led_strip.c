@@ -20,7 +20,7 @@
 
 #include <string.h>
 
-#define LED_STRIP_TASK_SIZE             (1000)
+#define LED_STRIP_TASK_SIZE             (10000)
 #define LED_STRIP_TASK_PRIORITY         (configMAX_PRIORITIES - 1)
 
 #define LED_STRIP_REFRESH_PERIOD_MS     (1U) // TODO: add as parameter to led_strip_init
@@ -33,10 +33,10 @@
 /****************************
         WS2815 Timing
  ****************************/
-#define LED_STRIP_RMT_TICKS_BIT_1_HIGH_WS2812 6 // 900ns (900ns +/- 150ns per datasheet)
+#define LED_STRIP_RMT_TICKS_BIT_1_HIGH_WS2812 6 // 600ns (600ns +/- 150ns per datasheet)
 #define LED_STRIP_RMT_TICKS_BIT_1_LOW_WS2812  3 // 300ns (350ns +/- 150ns per datasheet)
 #define LED_STRIP_RMT_TICKS_BIT_0_HIGH_WS2812 3 // 300ns (350ns +/- 150ns per datasheet)
-#define LED_STRIP_RMT_TICKS_BIT_0_LOW_WS2812  6 // 900ns (900ns +/- 150ns per datasheet)
+#define LED_STRIP_RMT_TICKS_BIT_0_LOW_WS2812  6 // 600ns (600ns +/- 150ns per datasheet)
 
 /****************************
         SK6812 Timing
@@ -240,6 +240,7 @@ static void led_strip_task(void *arg)
 
     for(;;) {
         rmt_wait_tx_done(led_strip->rmt_channel, portMAX_DELAY);
+        xSemaphoreTake(led_strip->update_semaphore, portMAX_DELAY);
         xSemaphoreTake(led_strip->access_semaphore, portMAX_DELAY);
 
         /*
@@ -283,7 +284,7 @@ static bool led_strip_init_rmt(struct led_strip_t *led_strip)
         .channel = led_strip->rmt_channel,
         .clk_div = LED_STRIP_RMT_CLK_DIV,
         .gpio_num = led_strip->gpio,
-        .mem_block_num = 1,
+        .mem_block_num = 2,
         .tx_config = {
             .loop_en = false,
             .carrier_freq_hz = 100, // Not used, but has to be set to avoid divide by 0 err
@@ -317,7 +318,8 @@ bool led_strip_init(struct led_strip_t *led_strip)
         (led_strip->led_strip_buf_1 == NULL) ||
         (led_strip->led_strip_buf_2 == NULL) ||
         (led_strip->led_strip_length == 0) ||
-        (led_strip->access_semaphore == NULL)) {
+        (led_strip->access_semaphore == NULL)||
+        (led_strip->update_semaphore == NULL)) {
         return false;
     }
 
@@ -426,7 +428,8 @@ bool led_strip_show(struct led_strip_t *led_strip)
         led_strip->showing_buf_1 = true;
         memset(led_strip->led_strip_buf_2, 0, sizeof(struct led_color_t) * led_strip->led_strip_length);
     }
-    xSemaphoreGive(led_strip->access_semaphore);
+    xSemaphoreGive(led_strip->access_semaphore); 
+    xSemaphoreGive(led_strip->update_semaphore);	
 
     return success;
 }
