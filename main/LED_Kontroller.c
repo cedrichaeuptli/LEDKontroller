@@ -66,6 +66,7 @@ int8_t ucTakt = 0;
 int8_t ucBeat = 0;
 int8_t ucColor_change = 0;
 int16_t usLED_counter = 0;
+int16_t usBPM = 0;
 
 
 
@@ -74,7 +75,7 @@ int16_t usLED_counter = 0;
 
 void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color);
 void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color,int16_t);
-void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color);
+void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color,bool ubActiv);
 void white(struct led_strip_t *led_strip, struct led_color_t *led_color);
 
 
@@ -91,14 +92,14 @@ void app_main()
                                             "xBeat_detection",
                                             ESP_TASK_MAIN_STACK+10000,
                                             NULL,
-                                            ESP_TASK_PRIO_MIN,
+					    ESP_TASK_MAIN_PRIO,
                                             &xBeat_detection_handle);
 
 	BaseType_t task_created2 = xTaskCreate(xLED,
                                             "xLED",
                                             ESP_TASK_MAIN_STACK+1000,
                                             NULL,
-                                            ESP_TASK_MAIN_PRIO,
+                                            ESP_TASK_PRIO_MIN,
                                             &xLED_handle);
 
 
@@ -208,10 +209,10 @@ void xBeat_detection (void *pvParameters)
 	double fulSmallAverage_one_frequenzband = 0;
 	double fulOneSecAverage_one_frequenzband_calc=0;
 	double fulOneSecAverage_one_Frequenzband[FREQUENZYBANDS] = {0};
+	int8_t ucClear = 0;	
 	int16_t usAudio_buffer_pos = 0;
 	int16_t usSamplefreq = 0;
 	int16_t usFFTbufferpos = 0;
-	int16_t usBPM = 0;
 	int16_t usPosition = 0;
 	int16_t usColor_counter = 0;
 	int64_t ullLasttime_Color = 0;
@@ -298,7 +299,7 @@ void xBeat_detection (void *pvParameters)
 		}
 
 		fusTime_beetween_color = (esp_timer_get_time() - ullLasttime_Color)/1000000.0;
-		if ((fusTime_beetween_color > 3) && ( usColor_counter > 50))
+		if ((fusTime_beetween_color > 3) || ( usColor_counter > 20))
 		{
 			usColor_counter = 0;
 			ucColor_change++;
@@ -309,9 +310,9 @@ void xBeat_detection (void *pvParameters)
 		}
 		if (fusTime_beetween_color > 5)
 		{
-			if(clear == 0)
+			if(ucClear == 0)
 			{
-				clear = 1;
+				ucClear = 1;
 				ESP_LOGI(TAG, "Buffer is clear");
 			}
 
@@ -323,7 +324,7 @@ void xBeat_detection (void *pvParameters)
 		}
 		else
 		{
-			clear = 0;
+			ucClear = 0;
 		}
 
 
@@ -498,7 +499,7 @@ void xLED (void *pvParameters)
 			{
 				case 0: LED_white = 0;walkinglight(&led_strip,&led_color);break;
 				case 1: lightchanger(&led_strip,&led_color,1);break;
-				case 2: colorwipe(&led_strip,&led_color);break;
+				case 2: colorwipe(&led_strip,&led_color,1);break;
 				case 3:
 					if(LED_white < 2)
 					{
@@ -506,11 +507,11 @@ void xLED (void *pvParameters)
 						white(&led_strip,&led_color);
 					}break;
 				case 4:
-					if(BPM < 100)
+					if(usBPM < 100)
 					{
-						colorwipe(&led_strip,&led_color);
+						lightchanger(&led_strip,&led_color,1);
 					}
-					else if(BPM < 120)
+					else if(usBPM < 120)
 					{
 						lightchanger(&led_strip,&led_color,3);
 					}
@@ -582,7 +583,7 @@ void walkinglight(struct led_strip_t *led_strip, struct led_color_t *led_color)
 
 	led_strip_set_pixel_color(led_strip, 0, led_color);
 	led_strip_show(led_strip);
-	vTaskDelay(20/ portTICK_PERIOD_MS);
+	vTaskDelay(40/ portTICK_PERIOD_MS);
 
 
 }
@@ -602,11 +603,11 @@ void Rainbow(struct led_strip_t *led_strip, struct led_color_t *led_color)
 // colorwipe wird die LED in einem Farbduchlauf abspielen, sobald ein Takt erkannt wird wird die Farbe geändert
 //
 /********************************************/
-void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color)
+void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color, bool ubActiv)
 {
 	usLED_counter++;
 
-	if (ucTakt == true)
+	if ((ucTakt == true) && (ubActiv == 1))
 	{
 		if(usLED_counter > 550)
 		{
@@ -643,7 +644,7 @@ void colorwipe(struct led_strip_t *led_strip, struct led_color_t *led_color)
 		led_strip_set_pixel_color(led_strip, g, led_color);
 	}
 	led_strip_show(led_strip);
-	vTaskDelay(20/ portTICK_PERIOD_MS);
+	vTaskDelay(50/ portTICK_PERIOD_MS);
 
 }
 
@@ -659,11 +660,10 @@ void lightchanger(struct led_strip_t *led_strip, struct led_color_t *led_color,i
 			int16_t LED_subdivision = LED_STRIP_LENGTH/subdivision;
 			if (ucTakt == true)
 			{
-				changing = 1;
-				Takt = false;
+				ucTakt = false;
 				for(int index = 0; index < (LED_STRIP_LENGTH/LED_subdivision);index++)
 				{
-					switch(Color_change)
+					switch(ucColor_change)
 					{
 						case 0: if (led_color->blue == 200)
 							{
@@ -734,7 +734,7 @@ void white(struct led_strip_t *led_strip, struct led_color_t *led_color)
 
 
 			ucTakt = false;
-			vTaskDelay(10/ portTICK_PERIOD_MS);
+			vTaskDelay(20/ portTICK_PERIOD_MS);
 
 
 

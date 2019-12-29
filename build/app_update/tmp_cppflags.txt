@@ -1,1 +1,1 @@
-ea82997-dirty example_vad v4.0-dev-837-g58df1d93b
+431aa4f-dirty example_vad v4.0-dev-837-g58df1d93b
